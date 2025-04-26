@@ -1,6 +1,11 @@
-from aiogram import Bot, Dispatcher, executor, types
+import os
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import executor
 
-API_TOKEN = '7755776750:AAEypACWVvhcnB1Od_-T3WRzFtQB6O5k53s'
+API_TOKEN = os.getenv("API_TOKEN")
+
+if not API_TOKEN:
+    raise ValueError("API_TOKEN is not set. Please set it in environment variables.")
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
