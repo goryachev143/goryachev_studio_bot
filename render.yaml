@@ -1,7 +1,1 @@
-services:
-  - type: web
-    name: goryachev-studio-bot
-    env: python
-    plan: free
-    buildCommand: ""
-    startCommand: python bot.py
+
