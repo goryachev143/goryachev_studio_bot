@@ -8,7 +8,7 @@ services:
     buildCommand: ""
     startCommand: "python bot.py"
     envVars:
-      - key: 7755776750:AAHaFINi5nwT__E93inT9GfxkQycGUf-HS0
+      - key: TOKEN
         value: 7755776750:AAHaFINi5nwT__E93inT9GfxkQycGUf-HS0
-      - key: 7681110461
+      - key: ADMIN_CHAT_ID
         value: 7681110461
