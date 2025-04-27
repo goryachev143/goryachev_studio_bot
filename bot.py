@@ -1,27 +1,29 @@
 import logging
-from aiogram import Bot, Dispatcher, types
+import asyncio
+
+from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram import F
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
+# === Конфиг ===
 TOKEN = "7755776750:AAHaFINi5nwT__E93inT9GfxkQycGUf-HS0"
-ADMIN_CHAT_ID = "7681110461"  # Твой чат ID
+ADMIN_CHAT_ID = "7681110461"
 
+# === Бот и Диспетчер ===
 bot = Bot(
     token=TOKEN,
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
 )
-
 dp = Dispatcher(storage=MemoryStorage())
 
 logging.basicConfig(level=logging.INFO)
 
-# Машина состояний для анкеты
+# === Состояния анкеты ===
 class Form(StatesGroup):
     service = State()
     subservice = State()
@@ -31,7 +33,7 @@ class Form(StatesGroup):
     car = State()
     datetime = State()
 
-# Клавиатура с основными услугами
+# === Клавиатуры ===
 main_menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="Тонировка автомобилей")],
     [KeyboardButton(text="Бронирование плёнкой")],
@@ -39,7 +41,6 @@ main_menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="Химчистка салона")],
 ], resize_keyboard=True)
 
-# Клавиатура с вариантами тонировки
 tinting_options = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="Тонировка автомобиля в круг")],
     [KeyboardButton(text="Тонировка передней полусферы")],
@@ -54,14 +55,12 @@ tinting_options = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="Растонировка")],
 ], resize_keyboard=True)
 
-# Клавиатура для выбора светопропускания
 tint_shades = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="5"), KeyboardButton(text="15"), KeyboardButton(text="20")],
     [KeyboardButton(text="35"), KeyboardButton(text="50"), KeyboardButton(text="70")],
     [KeyboardButton(text="80 (оттормалка)")],
 ], resize_keyboard=True)
 
-# Клавиатура для растонировки
 remove_tint_options = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="Растонировка задней полусферы")],
     [KeyboardButton(text="Растонировка передней полусферы")],
@@ -73,7 +72,8 @@ remove_tint_options = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="Снятие полосы")],
 ], resize_keyboard=True)
 
-# Стартовая команда
+# === Хендлеры ===
+
 @dp.message(CommandStart())
 async def start(message: types.Message, state: FSMContext):
     await message.answer(
@@ -88,7 +88,6 @@ async def start(message: types.Message, state: FSMContext):
     )
     await state.set_state(Form.service)
 
-# Выбор услуги
 @dp.message(Form.service)
 async def choose_service(message: types.Message, state: FSMContext):
     await state.update_data(service=message.text)
@@ -99,7 +98,6 @@ async def choose_service(message: types.Message, state: FSMContext):
     else:
         await ask_contacts(message, state)
 
-# Выбор подуслуги
 @dp.message(Form.subservice)
 async def choose_subservice(message: types.Message, state: FSMContext):
     await state.update_data(subservice=message.text)
@@ -110,26 +108,19 @@ async def choose_subservice(message: types.Message, state: FSMContext):
         await message.answer(
             "⚡ Внимание!\n\n"
             "Goryachev Studio не несет ответственности за демонтаж плёнки с заднего стекла. "
-            "Существует риск повреждения нитей обогрева во время снятия плёнки (примерно 50 на 50). "
-            "Пожалуйста, учитывайте это перед началом работы."
+            "Риск повреждения нитей обогрева (50/50 шанс)."
         )
         await ask_contacts(message, state)
     else:
         await message.answer("Выберите светопропускание плёнки:", reply_markup=tint_shades)
         await state.set_state(Form.tint_shade)
 
-# Выбор светопропускания
 @dp.message(Form.tint_shade)
 async def choose_shade(message: types.Message, state: FSMContext):
     await state.update_data(tint_shade=message.text)
     await ask_contacts(message, state)
 
-# Сбор контактов
 async def ask_contacts(message: types.Message, state: FSMContext):
-    await message.answer(
-        "Почти готово!\n\n"
-        "Пожалуйста, отправьте свои контактные данные, чтобы с вами связался менеджер из Goryachev Studio."
-    )
     await message.answer("Введите ваше имя:")
     await state.set_state(Form.name)
 
@@ -156,7 +147,6 @@ async def send_application(message: types.Message, state: FSMContext):
     await state.update_data(datetime=message.text)
     data = await state.get_data()
 
-    # Отправляем данные в админский чат
     text = (
         f"<b>Новая заявка!</b>\n\n"
         f"<b>Услуга:</b> {data.get('service')}\n"
@@ -169,24 +159,28 @@ async def send_application(message: types.Message, state: FSMContext):
     )
     await bot.send_message(chat_id=ADMIN_CHAT_ID, text=text)
 
-    # Сообщение клиенту
     await message.answer(
         "✅ Ваши данные успешно получены!\n\n"
         "В течение 5–10 минут с вами свяжется менеджер."
     )
-    await message.answer("Отличного настроения и хорошего дня! Спасибо, что выбрали Goryachev Studio!")
-
-    # Адрес
     await message.answer(
         "📍 Мы находимся по адресу:\n"
         "<b>г. Челябинск, Копейское шоссе 40Б/1</b>"
     )
 
-    # Завершаем анкету
     await state.clear()
 
+# === Обработчик остальных сообщений ===
+@dp.message()
+async def fallback(message: types.Message, state: FSMContext):
+    await message.answer(
+        "❓ Извините, я вас не понял.\n\n"
+        "Пожалуйста, выберите услугу через кнопки ниже."
+    )
+
+# === Старт проекта ===
+async def main():
+    await dp.start_polling(bot)
+
 if __name__ == "__main__":
-    import asyncio
-    async def main():
-        await dp.start_polling(bot)
     asyncio.run(main())
