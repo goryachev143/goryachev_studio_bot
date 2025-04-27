@@ -1,8 +1,8 @@
-import os
 import logging
 import asyncio
+import os
 
-from aiogram import Bot, Dispatcher, types, F
+from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -12,8 +12,8 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
 # === Конфигурация ===
-TOKEN = os.getenv('TELEGRAM_TOKEN')
-ADMIN_CHAT_ID = "7681110461"
+TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
 
 # === Бот и Диспетчер ===
 bot = Bot(
@@ -168,9 +168,6 @@ async def fallback(message: types.Message, state: FSMContext):
         "❓ Я вас не понял.\nВыберите услугу через меню."
     )
 
-# === Запуск ===
-async def main():
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# Экспортируем бота и диспетчера
+def create_app():
+    return bot, dp
