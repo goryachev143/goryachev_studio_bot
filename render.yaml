@@ -2,7 +2,13 @@ services:
   - type: web
     name: goryachev-studio-bot
     env: python
+    region: frankfurt
     plan: free
+    branch: main
     buildCommand: ""
-    startCommand: "python main.py"
-    autoDeploy: true
+    startCommand: "python bot.py"
+    envVars:
+      - key: TOKEN
+        value: ТВОЙ_ТОКЕН_БОТА
+      - key: ADMIN_CHAT_ID
+        value: ТВОЙ_ADMIN_CHAT_ID
