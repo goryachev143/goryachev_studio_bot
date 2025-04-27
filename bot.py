@@ -1,28 +1,14 @@
-import logging
-from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import executor
 
-# Вставь сюда свой токен бота
-TOKEN = '7755776750:AAHaFINi5nwT__E93inT9GfxkQycGUf-HS0'
+TOKEN = 'твой токен бота'
 
-# Включаем логирование
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+bot = Bot(token=TOKEN)
+dp = Dispatcher(bot)
 
-# Стартовая команда
-def start(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Привет! Я работаю 24/7!')
-
-def main():
-    updater = Updater(TOKEN)
-
-    dispatcher = updater.dispatcher
-
-    # Команда /start
-    dispatcher.add_handler(CommandHandler("start", start))
-
-    # Запуск бота
-    updater.start_polling()
-    updater.idle()
+@dp.message_handler(commands=['start'])
+async def send_welcome(message: types.Message):
+    await message.reply("Привет! Я бот студии Goryachev Studio! Чем могу помочь?")
 
 if __name__ == '__main__':
-    main()
+    executor.start_polling(dp)
