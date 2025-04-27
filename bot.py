@@ -10,9 +10,9 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
-# === Конфиг ===
-TOKEN = "7755776750:AAHaFINi5nwT__E93inT9GfxkQycGUf-HS0"
-ADMIN_CHAT_ID = "7681110461"
+# === Конфигурация ===
+TOKEN = "ТВОЙ_ТОКЕН"
+ADMIN_CHAT_ID = "ТВОЙ_CHAT_ID"
 
 # === Бот и Диспетчер ===
 bot = Bot(
@@ -73,17 +73,11 @@ remove_tint_options = ReplyKeyboardMarkup(keyboard=[
 ], resize_keyboard=True)
 
 # === Хендлеры ===
-
 @dp.message(CommandStart())
 async def start(message: types.Message, state: FSMContext):
     await message.answer(
         "👋 Добро пожаловать в <b>Goryachev Studio</b>!\n\n"
-        "Мы профессионально занимаемся:\n\n"
-        "🚗 <b>Тонировкой автомобилей</b>\n"
-        "🛡 <b>Бронированием плёнкой</b>\n"
-        "✨ <b>Полировкой кузова</b>\n"
-        "🧼 <b>Химчисткой салона</b>\n\n"
-        "Выберите интересующую услугу в меню ниже!",
+        "Выберите интересующую услугу ниже:",
         reply_markup=main_menu
     )
     await state.set_state(Form.service)
@@ -107,8 +101,7 @@ async def choose_subservice(message: types.Message, state: FSMContext):
     elif "Растонировка" in message.text:
         await message.answer(
             "⚡ Внимание!\n\n"
-            "Goryachev Studio не несет ответственности за демонтаж плёнки с заднего стекла. "
-            "Риск повреждения нитей обогрева (50/50 шанс)."
+            "Риск повреждения нитей обогрева при растонировке заднего стекла (50/50 шанс)."
         )
         await ask_contacts(message, state)
     else:
@@ -160,27 +153,20 @@ async def send_application(message: types.Message, state: FSMContext):
     await bot.send_message(chat_id=ADMIN_CHAT_ID, text=text)
 
     await message.answer(
-        "✅ Ваши данные успешно получены!\n\n"
-        "В течение 5–10 минут с вами свяжется менеджер."
+        "✅ Ваша заявка принята!\nМенеджер скоро свяжется с вами."
     )
     await message.answer(
-        "📍 Мы находимся по адресу:\n"
-        "<b>г. Челябинск, Копейское шоссе 40Б/1</b>"
+        "📍 Адрес:\n<b>г. Челябинск, Копейское шоссе 40Б/1</b>"
     )
 
     await state.clear()
 
-# === Обработчик остальных сообщений ===
 @dp.message()
 async def fallback(message: types.Message, state: FSMContext):
     await message.answer(
-        "❓ Извините, я вас не понял.\n\n"
-        "Пожалуйста, выберите услугу через кнопки ниже."
+        "❓ Я вас не понял.\nВыберите услугу через меню."
     )
 
-# === Старт проекта ===
-async def main():
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# Экспортируем бота и диспетчера
+def create_app():
+    return bot, dp
