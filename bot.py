@@ -7,11 +7,16 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram import F
 from aiogram.enums import ParseMode
+from aiogram.client.default import DefaultBotProperties
 
 TOKEN = "7755776750:AAHaFINi5nwT__E93inT9GfxkQycGUf-HS0"
-ADMIN_CHAT_ID = "7681110461"  # Например, -1001234567890 для группы
+ADMIN_CHAT_ID = "7681110461"  # Твой чат ID
 
-bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(
+    token=TOKEN,
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+)
+
 dp = Dispatcher(storage=MemoryStorage())
 
 logging.basicConfig(level=logging.INFO)
