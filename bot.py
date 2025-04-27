@@ -11,8 +11,8 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
 # === Конфигурация ===
-TOKEN = "ТВОЙ_ТОКЕН"
-ADMIN_CHAT_ID = "ТВОЙ_CHAT_ID"
+TOKEN = "7755776750:AAHaFINi5nwT__E93inT9GfxkQycGUf-HS0"
+ADMIN_CHAT_ID = "7681110461"
 
 # === Бот и Диспетчер ===
 bot = Bot(
