@@ -1,14 +1,10 @@
 services:
-  - type: web
+  - type: worker
     name: goryachev-studio-bot
     env: python
-    region: frankfurt
     plan: free
-    branch: main
-    buildCommand: ""
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "python bot.py"
     envVars:
-      - key: TOKEN
+      - key: TELEGRAM_TOKEN
         value: 7755776750:AAHaFINi5nwT__E93inT9GfxkQycGUf-HS0
-      - key: ADMIN_CHAT_ID
-        value: 7681110461
