@@ -1,18 +1,9 @@
-from telegram.ext import Updater, CommandHandler
+import asyncio
+from bot import create_app
 
-TOKEN = '7755776750:AAHaFINi5nwT__E93inT9GfxkQycGUf-HS0'
+async def main():
+    bot, dp = create_app()
+    await dp.start_polling(bot)
 
-def start(update, context):
-    update.message.reply_text('Привет! Я бот Goryachev Studio.')
-
-def main():
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
-
-    dp.add_handler(CommandHandler('start', start))
-
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    asyncio.run(main())
