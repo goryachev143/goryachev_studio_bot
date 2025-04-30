@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
-admin_id = YOUR_TELEGRAM_ID  # Замени на свой Telegram ID
+admin_id = 7681110461  # Замени на свой Telegram ID
 
 # --- Состояния ---
 class Form(StatesGroup):
