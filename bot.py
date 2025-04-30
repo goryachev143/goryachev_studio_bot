@@ -1,173 +1,154 @@
 import logging
-import asyncio
-import os
-
 from aiogram import Bot, Dispatcher, types
-from aiogram.filters import CommandStart
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.enums import ParseMode
-from aiogram.client.default import DefaultBotProperties
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.utils import executor
 
-# === Конфигурация ===
-TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
-
-# === Бот и Диспетчер ===
-bot = Bot(
-    token=TOKEN,
-    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-)
-dp = Dispatcher(storage=MemoryStorage())
+API_TOKEN = 'YOUR_BOT_TOKEN'  # Замени на свой токен
 
 logging.basicConfig(level=logging.INFO)
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot, storage=MemoryStorage())
 
-# === Состояния анкеты ===
+admin_id = YOUR_TELEGRAM_ID  # Замени на свой Telegram ID
+
+# --- Состояния ---
 class Form(StatesGroup):
-    service = State()
-    subservice = State()
-    tint_shade = State()
-    name = State()
-    phone = State()
-    car = State()
-    datetime = State()
+    ChoosingService = State()
+    ChoosingCarClass = State()
+    EnteringCarModel = State()
+    ChoosingDetail = State()
+    ChoosingTintPercentage = State()
+    ChoosingFilmType = State()
+    ConfirmingAdditionalService = State()
+    EnteringName = State()
+    EnteringPhone = State()
+    FinalConfirmation = State()
 
-# === Клавиатуры ===
-main_menu = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="Тонировка автомобилей")],
-    [KeyboardButton(text="Бронирование плёнкой")],
-    [KeyboardButton(text="Полировка кузова")],
-    [KeyboardButton(text="Химчистка салона")],
-], resize_keyboard=True)
+# --- Кнопки ---
+main_menu = ReplyKeyboardMarkup(resize_keyboard=True)
+main_menu.add("Тонировка", "Бронирование")
+main_menu.add("Полировка", "Химчистка")
 
-tinting_options = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="Тонировка автомобиля в круг")],
-    [KeyboardButton(text="Тонировка передней полусферы")],
-    [KeyboardButton(text="Тонировка задней полусферы")],
-    [KeyboardButton(text="Тонировка передних двух боковых стёкол")],
-    [KeyboardButton(text="Тонировка задних двух боковых стёкол")],
-    [KeyboardButton(text="Тонировка лобового стекла")],
-    [KeyboardButton(text="Тонировка заднего стекла")],
-    [KeyboardButton(text="Тонировка одного стекла")],
-    [KeyboardButton(text="Тонировка одной форточки")],
-    [KeyboardButton(text="Тонировка полосы 14см по ГОСТу")],
-    [KeyboardButton(text="Растонировка")],
-], resize_keyboard=True)
+back_button = KeyboardButton("Назад")
 
-tint_shades = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="5"), KeyboardButton(text="15"), KeyboardButton(text="20")],
-    [KeyboardButton(text="35"), KeyboardButton(text="50"), KeyboardButton(text="70")],
-    [KeyboardButton(text="80 (оттормалка)")],
-], resize_keyboard=True)
+# --- Обработчики ---
+@dp.message_handler(commands=['start'])
+async def start(message: types.Message):
+    await message.answer("Приветствуем в Goryachev Studio! Чем можем быть полезны?", reply_markup=main_menu)
+    await Form.ChoosingService.set()
 
-remove_tint_options = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="Растонировка задней полусферы")],
-    [KeyboardButton(text="Растонировка передней полусферы")],
-    [KeyboardButton(text="Растонировка лобового стекла")],
-    [KeyboardButton(text="Растонировка заднего стекла")],
-    [KeyboardButton(text="Растонировка двух стёкол")],
-    [KeyboardButton(text="Растонировка одного стекла")],
-    [KeyboardButton(text="Растонировка одной форточки")],
-    [KeyboardButton(text="Снятие полосы")],
-], resize_keyboard=True)
+@dp.message_handler(lambda message: message.text == "Назад", state="*")
+async def go_back(message: types.Message, state: FSMContext):
+    await message.answer("Вы вернулись в главное меню. Выберите услугу:", reply_markup=main_menu)
+    await Form.ChoosingService.set()
 
-# === Хендлеры ===
-@dp.message(CommandStart())
-async def start(message: types.Message, state: FSMContext):
-    await message.answer(
-        "👋 Добро пожаловать в <b>Goryachev Studio</b>!\n\n"
-        "Выберите интересующую услугу ниже:",
-        reply_markup=main_menu
-    )
-    await state.set_state(Form.service)
-
-@dp.message(Form.service)
+@dp.message_handler(state=Form.ChoosingService)
 async def choose_service(message: types.Message, state: FSMContext):
-    await state.update_data(service=message.text)
-
-    if message.text == "Тонировка автомобилей":
-        await message.answer("Выберите вариант тонировки:", reply_markup=tinting_options)
-        await state.set_state(Form.subservice)
+    service = message.text
+    await state.update_data(service=service)
+    if service == "Тонировка" or service == "Бронирование":
+        car_class_markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+        car_class_markup.add("Легковой седан", "Кроссовер", "Внедорожник", "Минивэн", "Купе", "Хэтчбек", "Универсал")
+        car_class_markup.add(back_button)
+        await message.answer("Выберите класс автомобиля:", reply_markup=car_class_markup)
+        await Form.ChoosingCarClass.set()
     else:
-        await ask_contacts(message, state)
+        await message.answer("Напишите, что хотите сделать (например: Полировка кузова)", reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(back_button))
+        await Form.EnteringCarModel.set()
 
-@dp.message(Form.subservice)
-async def choose_subservice(message: types.Message, state: FSMContext):
-    await state.update_data(subservice=message.text)
+@dp.message_handler(state=Form.ChoosingCarClass)
+async def choose_class(message: types.Message, state: FSMContext):
+    await state.update_data(car_class=message.text)
+    await message.answer("Введите марку и модель автомобиля (например: BMW 5 серия):", reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(back_button))
+    await Form.EnteringCarModel.set()
 
-    if message.text == "Растонировка":
-        await message.answer("Выберите вариант растонировки:", reply_markup=remove_tint_options)
-    elif "Растонировка" in message.text:
-        await message.answer(
-            "⚡ Внимание!\n\n"
-            "Риск повреждения нитей обогрева при растонировке заднего стекла (50/50 шанс)."
-        )
-        await ask_contacts(message, state)
+@dp.message_handler(state=Form.EnteringCarModel)
+async def enter_model(message: types.Message, state: FSMContext):
+    await state.update_data(car_model=message.text)
+    data = await state.get_data()
+    if data["service"] == "Тонировка":
+        tint_markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+        tint_markup.add("5%", "15%", "35%", "50%", "70%")
+        tint_markup.add(back_button)
+        await message.answer("Выберите процент тонировки:", reply_markup=tint_markup)
+        await Form.ChoosingTintPercentage.set()
+    elif data["service"] == "Бронирование":
+        detail_markup = ReplyKeyboardMarkup(resize_keyboard=True)
+        detail_markup.add("Капот", "Передняя оптика", "Зеркала", "Бампер", "Крыша", "Вся машина")
+        detail_markup.add("Ниши ручек", "Зона погрузки багажника")
+        detail_markup.add(back_button)
+        await message.answer("Что будем бронировать?", reply_markup=detail_markup)
+        await Form.ChoosingDetail.set()
     else:
-        await message.answer("Выберите светопропускание плёнки:", reply_markup=tint_shades)
-        await state.set_state(Form.tint_shade)
+        await ask_to_continue(message, state)
 
-@dp.message(Form.tint_shade)
-async def choose_shade(message: types.Message, state: FSMContext):
-    await state.update_data(tint_shade=message.text)
-    await ask_contacts(message, state)
+@dp.message_handler(state=Form.ChoosingTintPercentage)
+async def choose_tint(message: types.Message, state: FSMContext):
+    await state.update_data(tint=message.text)
+    await ask_to_continue(message, state)
 
-async def ask_contacts(message: types.Message, state: FSMContext):
-    await message.answer("Введите ваше имя:")
-    await state.set_state(Form.name)
+@dp.message_handler(state=Form.ChoosingDetail)
+async def choose_detail(message: types.Message, state: FSMContext):
+    await state.update_data(detail=message.text)
+    film_type_markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    film_type_markup.add("Гидрогелевая", "Полиуретановая")
+    film_type_markup.add(back_button)
+    await message.answer("Выберите тип пленки:", reply_markup=film_type_markup)
+    await Form.ChoosingFilmType.set()
 
-@dp.message(Form.name)
-async def ask_phone(message: types.Message, state: FSMContext):
+@dp.message_handler(state=Form.ChoosingFilmType)
+async def choose_film(message: types.Message, state: FSMContext):
+    await state.update_data(film=message.text)
+    await ask_to_continue(message, state)
+
+async def ask_to_continue(message: types.Message, state: FSMContext):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    markup.add("Да", "Нет")
+    markup.add(back_button)
+    await message.answer("Хотите ли вы выбрать ещё какую-то услугу?", reply_markup=markup)
+    await Form.ConfirmingAdditionalService.set()
+
+@dp.message_handler(state=Form.ConfirmingAdditionalService)
+async def confirm_more(message: types.Message, state: FSMContext):
+    if message.text == "Да":
+        await message.answer("Выберите услугу:", reply_markup=main_menu)
+        await Form.ChoosingService.set()
+    else:
+        await message.answer("Как вас зовут?", reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(back_button))
+        await Form.EnteringName.set()
+
+@dp.message_handler(state=Form.EnteringName)
+async def enter_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
-    await message.answer("Введите ваш номер телефона:")
-    await state.set_state(Form.phone)
+    await message.answer("Укажите номер телефона:", reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(back_button))
+    await Form.EnteringPhone.set()
 
-@dp.message(Form.phone)
-async def ask_car(message: types.Message, state: FSMContext):
+@dp.message_handler(state=Form.EnteringPhone)
+async def enter_phone(message: types.Message, state: FSMContext):
     await state.update_data(phone=message.text)
-    await message.answer("Введите марку и модель автомобиля:")
-    await state.set_state(Form.car)
-
-@dp.message(Form.car)
-async def ask_datetime(message: types.Message, state: FSMContext):
-    await state.update_data(car=message.text)
-    await message.answer("Укажите желаемую дату и время записи:")
-    await state.set_state(Form.datetime)
-
-@dp.message(Form.datetime)
-async def send_application(message: types.Message, state: FSMContext):
-    await state.update_data(datetime=message.text)
     data = await state.get_data()
 
-    text = (
-        f"<b>Новая заявка!</b>\n\n"
-        f"<b>Услуга:</b> {data.get('service')}\n"
-        f"<b>Подуслуга:</b> {data.get('subservice', 'Не указана')}\n"
-        f"<b>Светопропускание:</b> {data.get('tint_shade', 'Не указано')}\n\n"
-        f"<b>Имя клиента:</b> {data.get('name')}\n"
-        f"<b>Телефон:</b> {data.get('phone')}\n"
-        f"<b>Авто:</b> {data.get('car')}\n"
-        f"<b>Дата и время записи:</b> {data.get('datetime')}"
-    )
-    await bot.send_message(chat_id=ADMIN_CHAT_ID, text=text)
+    client_info = f"""ЗАЯВКА
 
-    await message.answer(
-        "✅ Ваша заявка принята!\nМенеджер скоро свяжется с вами."
-    )
-    await message.answer(
-        "📍 Адрес:\n<b>г. Челябинск, Копейское шоссе 40Б/1</b>"
-    )
+Услуга: {data.get('service')}
+Класс авто: {data.get('car_class')}
+Модель: {data.get('car_model')}
+Детали: {data.get('detail', '—')}
+Пленка: {data.get('film', '—')}
+Тонировка: {data.get('tint', '—')}
 
-    await state.clear()
+Имя: {data.get('name')}
+Телефон: {data.get('phone')}
+"""
 
-@dp.message()
-async def fallback(message: types.Message, state: FSMContext):
-    await message.answer(
-        "❓ Я вас не понял.\nВыберите услугу через меню."
-    )
+    # Отправка админу
+    await bot.send_message(admin_id, client_info)
 
-# Экспортируем бота и диспетчера
-def create_app():
-    return bot, dp
+    await message.answer("Спасибо! Мы получили вашу заявку и скоро свяжемся с вами.")
+    await state.finish()
+
+if __name__ == '__main__':
+    executor.start_polling(dp, skip_updates=True)
