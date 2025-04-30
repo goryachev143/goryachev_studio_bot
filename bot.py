@@ -6,7 +6,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils import executor
 
-API_TOKEN = 'YOUR_BOT_TOKEN'  # Замени на свой токен
+API_TOKEN = '7755776750:AAHaFINi5nwT__E93inT9GfxkQycGUf-HS0'  # Замени на свой токен
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
